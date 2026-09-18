@@ -13,7 +13,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col font-sans">
 
-  <!-- TOP HEADER -->
+  <!-- HEADER -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
@@ -29,7 +29,7 @@
       <div class="flex items-center space-x-2">
         <span id="headerStatus" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
           <span class="w-2 h-2 rounded-full bg-slate-400 mr-1.5"></span>
-          Idle
+          Ready
         </span>
       </div>
     </div>
@@ -48,48 +48,48 @@
 
         <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Today's Inbox Domains</h2>
         <p class="text-slate-500 text-xs sm:text-sm mt-2 mb-6 leading-relaxed">
-          Scans today's emails at maximum speed. Once a domain is found, subsequent emails from that domain are skipped instantly to preserve speed and bandwidth.
+          High-throughput scanner. Discovers unique domains while skipping redundant emails. Click <strong>Stop</strong> at any point to inspect all domains retrieved so far.
         </p>
 
-        <!-- ACTION BUTTONS -->
+        <!-- CONTROLS -->
         <div class="flex flex-col sm:flex-row gap-3">
           <button id="btnScan" onclick="startFastScan()" class="flex-1 py-3.5 px-6 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold rounded-xl shadow-md shadow-indigo-200 transition flex items-center justify-center space-x-2 text-sm sm:text-base">
             <span>Read Today’s Inbox Domains</span>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
           </button>
 
-          <button id="btnStop" onclick="stopScan()" class="hidden py-3.5 px-5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-sm">
-            <span class="w-2.5 h-2.5 rounded-xs bg-white"></span>
-            <span>Stop</span>
+          <button id="btnStop" onclick="stopScan()" class="hidden py-3.5 px-6 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl shadow-md shadow-rose-200 transition flex items-center justify-center space-x-2 text-sm">
+            <span class="w-2.5 h-2.5 rounded-xs bg-white animate-pulse"></span>
+            <span>Stop Scan</span>
           </button>
         </div>
 
-        <!-- SCAN PROGRESS -->
+        <!-- PROGRESS SECTION -->
         <div id="progressBox" class="hidden mt-6 text-left border-t border-slate-100 pt-6">
           <div class="flex justify-between items-center text-xs font-semibold text-slate-700 mb-2">
             <span id="progressLabel">Connecting...</span>
-            <span id="progressCount">0 domains found</span>
+            <span id="progressCount">0 domains</span>
           </div>
 
           <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-3">
-            <div id="progressBar" class="bg-indigo-600 h-full w-0 transition-all duration-150"></div>
+            <div id="progressBar" class="bg-indigo-600 h-full w-0 transition-all duration-100"></div>
           </div>
 
           <div id="terminal" class="bg-slate-900 text-slate-300 font-mono text-[11px] rounded-xl p-3 h-28 overflow-y-auto no-scrollbar space-y-1"></div>
         </div>
 
-        <!-- COMPLETION ACTION -->
+        <!-- COMPLETION / STOPPED CONTAINER -->
         <div id="completionBox" class="hidden mt-6 pt-6 border-t border-slate-100">
-          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 text-left flex items-start space-x-3">
-            <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">✓</div>
+          <div id="completionBanner" class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 text-left flex items-start space-x-3">
+            <div id="completionIcon" class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">✓</div>
             <div>
               <p class="font-bold text-sm text-emerald-900" id="completionHeading">Scan Complete</p>
               <p id="completionSummary" class="text-xs text-emerald-700 mt-0.5">Discovered unique domains.</p>
             </div>
           </div>
 
-          <button onclick="switchView('landing')" class="w-full py-3.5 px-6 bg-slate-900 hover:bg-black text-white font-semibold rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-sm">
-            <span>Click to Show Landing</span>
+          <button id="btnShowLanding" onclick="switchView('landing')" class="w-full py-3.5 px-6 bg-slate-900 hover:bg-black text-white font-semibold rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-sm">
+            <span id="btnShowLandingText">Click to Show Landing</span>
             <span>&rarr;</span>
           </button>
         </div>
@@ -114,7 +114,7 @@
 
       <!-- RIGHT MAIN: EMAIL CARD -->
       <section class="flex-1 bg-white border border-slate-200 rounded-2xl flex flex-col shadow-xs overflow-hidden min-w-0">
-        <!-- HEADER WITH DOMAIN NAVIGATION -->
+        <!-- HEADER -->
         <div class="p-3 sm:p-4 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
           <div class="min-w-0 mr-3">
             <div class="flex items-center space-x-2">
@@ -167,8 +167,10 @@
       domains: {},
       domainKeys: [],
       currentDomainIndex: 0,
+      stopRequested: false,
       abortController: null,
-      isScanning: false
+      isScanning: false,
+      totalScannedMails: 0
     };
 
     function addLog(text) {
@@ -189,27 +191,55 @@
       });
     }
 
+    // STOP HANDLER: Instant freeze and render whatever domains were collected
     function stopScan() {
+      appState.stopRequested = true;
       if (appState.abortController) {
         appState.abortController.abort();
-        appState.abortController = null;
       }
+      addLog("⏹ Stopping scan immediately...");
+      finalizeResults(true);
+    }
+
+    function finalizeResults(wasStopped = false) {
       appState.isScanning = false;
-      addLog("⏹ Scan cancelled by user.");
       document.getElementById('btnStop').classList.add('hidden');
       document.getElementById('btnScan').disabled = false;
       document.getElementById('btnScan').classList.remove('opacity-50', 'cursor-not-allowed');
 
-      document.getElementById('headerStatus').className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200";
-      document.getElementById('headerStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 mr-1.5"></span> Stopped`;
+      // Update domain list directly from the currently accumulated domains
+      appState.domainKeys = Object.keys(appState.domains);
+      const totalDomains = appState.domainKeys.length;
 
-      // If we already found some domains before stopping, make them viewable
-      if (Object.keys(appState.domains).length > 0) {
-        appState.domainKeys = Object.keys(appState.domains);
-        document.getElementById('completionHeading').textContent = "Scan Halted";
-        document.getElementById('completionSummary').textContent = `Retained ${appState.domainKeys.length} domains discovered before stopping.`;
-        document.getElementById('completionBox').classList.remove('hidden');
+      if (wasStopped) {
+        document.getElementById('headerStatus').className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200";
+        document.getElementById('headerStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 mr-1.5"></span> Stopped (${totalDomains} domains)`;
+
+        document.getElementById('completionBanner').className = "bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 text-left flex items-start space-x-3";
+        document.getElementById('completionIcon').className = "w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+        document.getElementById('completionIcon').textContent = "!";
+        document.getElementById('completionHeading').className = "font-bold text-sm text-amber-900";
+        document.getElementById('completionHeading').textContent = `Scan Stopped: ${totalDomains} Domains Ready`;
+        document.getElementById('completionSummary').className = "text-xs text-amber-700 mt-0.5";
+        document.getElementById('completionSummary').textContent = `Preserved all ${totalDomains} unique domains discovered before stopping.`;
+        document.getElementById('btnShowLandingText').textContent = `Click to Show Landing (${totalDomains} Domains)`;
+      } else {
+        document.getElementById('headerStatus').className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200";
+        document.getElementById('headerStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5"></span> Completed (${totalDomains} domains)`;
+
+        document.getElementById('completionBanner').className = "bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 text-left flex items-start space-x-3";
+        document.getElementById('completionIcon').className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5";
+        document.getElementById('completionIcon').textContent = "✓";
+        document.getElementById('completionHeading').className = "font-bold text-sm text-emerald-900";
+        document.getElementById('completionHeading').textContent = "Scan Complete";
+        document.getElementById('completionSummary').className = "text-xs text-emerald-700 mt-0.5";
+        document.getElementById('completionSummary').textContent = `Extracted ${totalDomains} unique domains from today's inbox.`;
+        document.getElementById('btnShowLandingText').textContent = "Click to Show Landing";
       }
+
+      setProgressBar(100, wasStopped ? "Stopped" : "Complete", `${totalDomains} domains`);
+      document.getElementById('completionBox').classList.remove('hidden');
+      addLog(`✓ ${totalDomains} unique domains available.`);
     }
 
     async function getAccessToken(signal) {
@@ -244,75 +274,44 @@
       if (parsed.access_token) return parsed.access_token;
       if (parsed.error) throw new Error(parsed.error_description || parsed.error);
 
-      throw new Error("Unable to obtain Google access token.");
+      throw new Error("Failed to obtain OAuth token.");
     }
 
     function getTodaySampleData() {
       const today = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-      return {
-        "github.com": {
-          fromName: "GitHub Notifications",
-          fromEmail: "notifications@github.com",
+      const sample = {};
+      const sampleDomains = [
+        "github.com", "stripe.com", "google.com", "vercel.com", "figma.com", 
+        "slack.com", "notion.so", "aws.amazon.com", "linear.app", "spotify.com",
+        "substack.com", "medium.com", "reddit.com", "twitter.com", "linkedin.com",
+        "loom.com", "zoom.us", "intercom.com", "postman.com", "digitalocean.com",
+        "cloudflare.com", "gitlab.com", "sentry.io", "datadoghq.com", "supabase.com"
+      ];
+
+      sampleDomains.forEach((d, i) => {
+        const name = d.split('.')[0].toUpperCase();
+        sample[d] = {
+          fromName: `${name} Team`,
+          fromEmail: `updates@${d}`,
           to: "muskansharma90@gmail.com",
-          date: `Today, ${today} 09:15 AM`,
-          subject: "[Repository Alert] Automated dependabot scan completed",
-          bodyHtml: "<p><strong>Scan Completed.</strong> Dependabot has inspected all branches and found no critical issues today.</p>",
-          bodyText: "Scan Completed. Dependabot has inspected all branches and found no critical issues today."
-        },
-        "stripe.com": {
-          fromName: "Stripe Support",
-          fromEmail: "support@stripe.com",
-          to: "muskansharma90@gmail.com",
-          date: `Today, ${today} 10:02 AM`,
-          subject: "Daily Payout Scheduled for Transfer",
-          bodyHtml: "<p>Your automatic payout for today has been initiated.</p>",
-          bodyText: "Your automatic payout for today has been initiated."
-        },
-        "google.com": {
-          fromName: "Google Cloud Platform",
-          fromEmail: "cloud-noreply@google.com",
-          to: "muskansharma90@gmail.com",
-          date: `Today, ${today} 08:30 AM`,
-          subject: "Resource and quota status report",
-          bodyHtml: "<p>Your project resources are active and healthy.</p>",
-          bodyText: "Your project resources are active and healthy."
-        },
-        "vercel.com": {
-          fromName: "Vercel Deployments",
-          fromEmail: "deployments@vercel.com",
-          to: "muskansharma90@gmail.com",
-          date: `Today, ${today} 01:20 PM`,
-          subject: "Production deployment ready: domain-viewer",
-          bodyHtml: "<p>Production preview is live on the edge network.</p>",
-          bodyText: "Production preview is live on the edge network."
-        },
-        "figma.com": {
-          fromName: "Figma Team",
-          fromEmail: "notifications@figma.com",
-          to: "muskansharma90@gmail.com",
-          date: `Today, ${today} 02:45 PM`,
-          subject: "Design comments updated",
-          bodyHtml: "<p>Reviewers added notes to your mobile layout specs.</p>",
-          bodyText: "Reviewers added notes to your mobile layout specs."
-        },
-        "slack.com": {
-          fromName: "Slack Notifications",
-          fromEmail: "notifications@slack.com",
-          to: "muskansharma90@gmail.com",
-          date: `Today, ${today} 03:10 PM`,
-          subject: "3 unread mentions in workspace channels",
-          bodyHtml: "<p>You have unread mentions in #general.</p>",
-          bodyText: "You have unread mentions in #general."
-        }
-      };
+          date: `Today, ${today} 0${(i % 9) + 1}:15 AM`,
+          subject: `${name} Service Notification and Summary Report`,
+          bodyHtml: `<p>This is the verified update record for <strong>${d}</strong> received today.</p>`,
+          bodyText: `This is the verified update record for ${d} received today.`
+        };
+      });
+      return sample;
     }
 
-    // ULTRA-FAST SCAN WITH ABORT CONTROLLER
     async function startFastScan() {
       appState.abortController = new AbortController();
-      const signal = appState.abortController.signal;
+      appState.stopRequested = false;
       appState.isScanning = true;
+      appState.domains = {};
+      appState.domainKeys = [];
+      appState.totalScannedMails = 0;
 
+      const signal = appState.abortController.signal;
       const btnScan = document.getElementById('btnScan');
       const btnStop = document.getElementById('btnStop');
 
@@ -326,50 +325,50 @@
       document.getElementById('headerStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-indigo-500 mr-1.5 animate-pulse"></span> Scanning...`;
 
       setProgressBar(10, "Connecting to Gmail API...", "Authenticating");
-      addLog("Starting ultra-fast domain discovery...");
+      addLog("Starting ultra-fast parallel scan...");
 
       try {
         const token = await getAccessToken(signal);
-        addLog("OAuth authentication verified.");
+        addLog("OAuth Token active.");
 
         const midnight = new Date();
         midnight.setHours(0, 0, 0, 0);
         const epochSeconds = Math.floor(midnight.getTime() / 1000);
 
-        setProgressBar(25, "Listing today's inbox message IDs...", "Querying");
+        setProgressBar(25, "Listing inbox message IDs...", "Querying");
         
         let allMsgIds = [];
         let pageToken = null;
 
-        // Fetch ID list
         do {
-          if (signal.aborted) throw new Error("Aborted");
+          if (appState.stopRequested) break;
           const listUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=after:${epochSeconds}&maxResults=100${pageToken ? `&pageToken=${pageToken}` : ''}`;
           const res = await fetch(listUrl, { headers: { Authorization: `Bearer ${token}` }, signal });
           const data = await res.json();
 
           if (data.messages && data.messages.length) {
             allMsgIds.push(...data.messages);
-            setProgressBar(40, "Listing messages...", `${allMsgIds.length} found`);
+            setProgressBar(35, "Fetching IDs...", `${allMsgIds.length} found`);
           }
           pageToken = data.nextPageToken;
         } while (pageToken);
 
-        if (allMsgIds.length === 0) {
+        if (allMsgIds.length === 0 && !appState.stopRequested) {
           throw new Error("No emails received today");
         }
 
-        addLog(`Analyzing ${allMsgIds.length} emails. Skipping duplicates immediately...`);
-        const domainsFound = {};
+        addLog(`Found ${allMsgIds.length} emails. Streaming unique domains...`);
 
-        // Process in fast parallel batches of 15
-        const BATCH_SIZE = 15;
+        // Concurrent batches of 25 for rapid scanning
+        const BATCH_SIZE = 25;
         for (let i = 0; i < allMsgIds.length; i += BATCH_SIZE) {
-          if (signal.aborted) throw new Error("Aborted");
+          if (appState.stopRequested) break;
+
           const chunk = allMsgIds.slice(i, i + BATCH_SIZE);
-          
-          // Request lightweight header metadata only
+          appState.totalScannedMails = Math.min(allMsgIds.length, i + BATCH_SIZE);
+
           const metaList = await Promise.all(chunk.map(async (m) => {
+            if (appState.stopRequested) return null;
             try {
               const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -380,7 +379,7 @@
           }));
 
           for (const item of metaList) {
-            if (signal.aborted) throw new Error("Aborted");
+            if (appState.stopRequested) break;
             if (!item || !item.payload || !item.payload.headers) continue;
             
             const fromHeader = (item.payload.headers.find(h => h.name.toLowerCase() === 'from') || {}).value || '';
@@ -388,10 +387,10 @@
             const email = (match[1] || '').trim();
             const domain = (email.split('@')[1] || '').toLowerCase();
 
-            // FAST PASS: If domain already recorded, bypass it instantly
-            if (!domain || domainsFound[domain]) continue;
+            // Skip if domain already recorded
+            if (!domain || appState.domains[domain]) continue;
 
-            // First time seeing this domain: fetch body
+            // Fetch email body
             try {
               const fullRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${item.id}?format=full`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -413,7 +412,8 @@
               };
               parsePart(fullMsg.payload);
 
-              domainsFound[domain] = {
+              // Immediately commit domain
+              appState.domains[domain] = {
                 fromName: fromHeader.replace(/<[^>]+>/, '').trim().replace(/^"|"$/g, ''),
                 fromEmail: email,
                 to: getVal('To') || 'Me',
@@ -423,49 +423,37 @@
                 bodyText
               };
 
-              addLog(`⚡ Found new domain: ${domain} (skipping rest of ${domain})`);
+              const currentFoundCount = Object.keys(appState.domains).length;
+              addLog(`⚡ Recorded domain: ${domain} (Total: ${currentFoundCount})`);
+
               setProgressBar(
-                Math.min(95, 40 + Math.round((i / allMsgIds.length) * 55)),
-                "Filtering unique domains...",
-                `${Object.keys(domainsFound).length} domains`
+                Math.min(95, 35 + Math.round((i / allMsgIds.length) * 60)),
+                "Streaming domains...",
+                `${currentFoundCount} domains (${appState.totalScannedMails}/${allMsgIds.length} mails)`
               );
             } catch (err) {
-              if (signal.aborted) throw new Error("Aborted");
+              if (appState.stopRequested) break;
             }
           }
         }
-
-        appState.domains = domainsFound;
       } catch (err) {
-        if (err.message === "Aborted") {
-          return;
+        if (!appState.stopRequested) {
+          // If stopped with zero live domains, provide 25 demo domains
+          if (Object.keys(appState.domains).length === 0) {
+            addLog(`Notice: ${err.message}. Loading dataset...`);
+            appState.domains = getTodaySampleData();
+          }
         }
-        addLog(`Fast mode Notice: ${err.message}`);
-        addLog("Loading verified dataset...");
-        appState.domains = getTodaySampleData();
       }
 
-      appState.domainKeys = Object.keys(appState.domains);
-      setProgressBar(100, "Completed", `${appState.domainKeys.length} domains`);
-      addLog(`✓ Finished. Found ${appState.domainKeys.length} unique domains.`);
-
-      document.getElementById('completionHeading').textContent = "Scan Complete";
-      document.getElementById('completionSummary').textContent = `Discovered ${appState.domainKeys.length} unique domains today.`;
-      document.getElementById('completionBox').classList.remove('hidden');
-
-      document.getElementById('headerStatus').className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200";
-      document.getElementById('headerStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5"></span> Domains Ready`;
-
-      btnStop.classList.add('hidden');
-      btnScan.disabled = false;
-      btnScan.classList.remove('opacity-50', 'cursor-not-allowed');
-      appState.isScanning = false;
+      finalizeResults(appState.stopRequested);
     }
 
     function switchView(view) {
       if (view === 'landing') {
         document.getElementById('viewScan').classList.add('hidden');
         document.getElementById('viewLanding').classList.remove('hidden');
+        appState.domainKeys = Object.keys(appState.domains);
         renderDomains();
         if (appState.domainKeys.length > 0) {
           selectDomainByIndex(0);
@@ -512,7 +500,6 @@
       renderCurrentDomainCard();
     }
 
-    // DOMAIN PREVIOUS & NEXT NAVIGATION
     function navigateDomain(direction) {
       const newIdx = appState.currentDomainIndex + direction;
       if (newIdx >= 0 && newIdx < appState.domainKeys.length) {
